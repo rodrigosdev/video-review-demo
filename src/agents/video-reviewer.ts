@@ -58,7 +58,9 @@ export function VideoReviewer({ id }: AgentProps) {
 
 	const pr = useInitialData<PullRequestRef>();
 	const review = readReviewRequest(useDelivery());
-	const sandbox = getSandbox(env.Sandbox, id);
+	// Containers bill while awake. In-flight commands keep it awake, so this only
+	// counts idle time (e.g. between model turns); the default is 10 minutes.
+	const sandbox = getSandbox(env.Sandbox, id, { sleepAfter: '2m' });
 	useSandbox(cloudflareSandbox(sandbox));
 
 	// Check out the requested commit before the model's first turn, so every
@@ -190,16 +192,18 @@ function readReviewRequest(delivery: DeliveredMessage): ReviewRequest {
 
 // Fetches both commits (blobs lazily) so `git diff base...head` works, then
 // checks out the head. Reuses the clone when the container is still warm.
+// Runs in a subshell: the sandbox shell session persists across commands, and a
+// leaked `set -e` would make the agent's first failing command kill it.
 function checkoutScript({ owner, repo }: PullRequestRef, { baseSha, headSha }: ReviewRequest) {
-	return [
-		'set -e',
+	const steps = [
 		`mkdir -p ${REPO_DIR} && cd ${REPO_DIR}`,
 		`[ -d .git ] || { git init -q && git remote add origin https://github.com/${owner}/${repo}.git; }`,
 		`git fetch -q --filter=blob:none origin ${baseSha} ${headSha}`,
 		`git checkout -q -f --detach ${headSha}`,
 		// Keeps ignored files (node_modules, build caches) so reinstalls are fast.
 		'git clean -fdq',
-	].join('\n');
+	];
+	return `(\nset -e\n${steps.join('\n')}\n)`;
 }
 
 function parseRecorderOutput(run: ShellResult) {
