@@ -1,0 +1,30 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "video-review-demo",
+	"compatibility_date": "2026-06-01",
+	"compatibility_flags": ["nodejs_compat"],
+	// Workers Traces shows each agent response as a trace with agent-level
+	// spans: https://flueframework.com/docs/guide/observability/#cloudflare
+	"observability": { "enabled": true, "traces": { "enabled": true } },
+	// Set locally in .env; deployed with `wrangler deploy --secrets-file .env`.
+	"secrets": { "required": ["OPENAI_API_KEY", "GITHUB_TOKEN", "GITHUB_WEBHOOK_SECRET"] },
+	// Recordings (mp4 + gif preview), served back out through /videos/* in src/app.ts.
+	"r2_buckets": [{ "binding": "VIDEOS", "bucket_name": "video-review-demo" }],
+	// The container each PR review runs in. See Dockerfile.
+	"durable_objects": {
+		"bindings": [{ "class_name": "Sandbox", "name": "Sandbox" }],
+	},
+	"containers": [
+		{
+			"class_name": "Sandbox",
+			"image": "./Dockerfile",
+			// 4 vCPU / 12 GiB: dependency installs, `next build`, and Chromium side by side.
+			"instance_type": "standard-4",
+			"max_instances": 3,
+		},
+	],
+	// Every agent generates a Durable Object class named after its identity
+	// (VideoReviewer -> FlueVideoReviewerAgent). Append a new tag for each change:
+	// https://flueframework.com/docs/guide/cloudflare-target/#managing-migrations
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["FlueVideoReviewerAgent", "Sandbox"] }],
+}

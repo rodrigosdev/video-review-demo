@@ -1,0 +1,29 @@
+{
+	"name": "video-review-demo",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"deploy": "vite build && wrangler deploy --secrets-file .env",
+		"check:types": "tsc --noEmit",
+		"typegen": "wrangler types"
+	},
+	"dependencies": {
+		"@cloudflare/sandbox": "^0.12.10",
+		"@flue/github": "2.1.0",
+		"@flue/runtime": "2.1.0",
+		"@octokit/rest": "^22.0.1",
+		"hono": "4.12.32",
+		"valibot": "^1.5.0"
+	},
+	"devDependencies": {
+		"@cloudflare/vite-plugin": "^1.39.2",
+		"@flue/cli": "2.1.0",
+		"@flue/vite": "2.1.0",
+		"@types/node": "^22.20.4",
+		"typescript": "^7.0.2",
+		"vite": "^8.0.14",
+		"wrangler": "^4.113.0"
+	}
+}

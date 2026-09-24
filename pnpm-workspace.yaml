@@ -1,0 +1,10 @@
+allowBuilds:
+  esbuild: true
+  workerd: true
+  "@google/genai": false
+  core-js-pure: false
+  protobufjs: false
+minimumReleaseAgeExclude:
+  - '@flue/cli@2.1.1'
+  - '@flue/runtime@2.1.1'
+  - '@flue/vite@2.1.1'
